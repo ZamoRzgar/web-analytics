@@ -1,0 +1,48 @@
+// prisma/schema.prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Visit {
+  id             String   @id @default(cuid())
+  timestamp      DateTime @default(now())
+  ip             String?
+  country        String?
+  city           String?
+  region         String?
+  browser        String?
+  browserVersion String?
+  os             String?
+  device         String? // mobile, tablet, desktop
+  referrer       String?
+  pathname       String
+  websiteId      String
+  website        Website  @relation(fields: [websiteId], references: [id])
+
+  @@index([websiteId, timestamp])
+  @@index([pathname])
+}
+
+model Website {
+  id        String   @id @default(cuid())
+  name      String
+  domain    String
+  apiKey    String   @unique
+  userId    String
+  createdAt DateTime @default(now())
+  visits    Visit[]
+
+  @@index([userId])
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+}
