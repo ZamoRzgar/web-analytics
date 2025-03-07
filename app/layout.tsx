@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { Providers } from './providers'
 
+
 // Use system font instead of Google Fonts to avoid connectivity issues
 export const metadata: Metadata = {
     title: 'Web Analytics Dashboard',

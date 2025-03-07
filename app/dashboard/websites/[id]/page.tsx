@@ -1,18 +1,18 @@
-
-import { db } from '@/lib/db'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { db } from '@/lib/db'
 import { Card, CardContent, CardHeader, CardTitle } from '@/src/components/ui/card'
+import { Button } from '@/src/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/src/components/ui/tabs'
-import { BarChart, Chrome, Globe, Smartphone, TrendingUp, Users, Clock, Activity } from 'lucide-react'
-import VisitorChart from '@/src/components/analytics/visitor-chart'
-import { DashboardMetric } from '@/src/components/analytics/dashboard-metric'
-import BrowserChart from '@/src/components/analytics/browser-chart'
-import DeviceChart from '@/src/components/analytics/device-chart'
-import LocationChart from '@/src/components/analytics/location-chart'
+import { ArrowLeft, BarChart, Chrome, Globe, Smartphone, TrendingUp, Users, Clock } from 'lucide-react'
+import VisitorChart from '../../../../src/components/analytics/visitor-chart'
+import { DashboardMetric } from '../../../../src/components/analytics/dashboard-metric'
+import BrowserChart from '../../../../src/components/analytics/browser-chart'
+import DeviceChart from '../../../../src/components/analytics/device-chart'
+import LocationChart from '../../../../src/components/analytics/location-chart'
 import { getRelativeTimeFrame } from '@/lib/date-utils'
-
-
+import Link from 'next/link'
+import { notFound } from 'next/navigation'
 
 // Define types for analytics data
 interface DeviceData {
@@ -44,16 +44,30 @@ interface AnalyticsData {
     dailyVisits: DailyVisitData[];
 }
 
-// Get aggregated metrics for all user websites
-async function getAnalyticsOverview(userId: string, days: number = 30): Promise<AnalyticsData> {
+// Get metrics for a specific website
+async function getWebsiteAnalytics(websiteId: string, days: number = 30): Promise<AnalyticsData> {
     const timeFrame = getRelativeTimeFrame(days)
+
+    // Get website to verify it exists
+    const website = await db.website.findUnique({
+        where: { id: websiteId }
+    })
+
+    if (!website) {
+        return {
+            totalVisits: 0,
+            uniqueVisitors: 0,
+            browsers: [],
+            devices: [],
+            countries: [],
+            dailyVisits: []
+        }
+    }
 
     // Get total visits
     const totalVisits = await db.visit.count({
         where: {
-            website: {
-                userId
-            },
+            websiteId,
             timestamp: {
                 gte: timeFrame.start,
                 lte: timeFrame.end
@@ -64,7 +78,7 @@ async function getAnalyticsOverview(userId: string, days: number = 30): Promise<
     // Get unique visitors (rough estimate by IP)
     const uniqueVisitors = await db.$queryRaw`
     SELECT COUNT(DISTINCT ip) FROM "Visit" 
-    WHERE "websiteId" IN (SELECT id FROM "Website" WHERE "userId" = ${userId})
+    WHERE "websiteId" = ${websiteId}
     AND "timestamp" >= ${timeFrame.start} AND "timestamp" <= ${timeFrame.end}
   `
 
@@ -72,7 +86,7 @@ async function getAnalyticsOverview(userId: string, days: number = 30): Promise<
     const browsers = await db.$queryRaw`
     SELECT "browser", COUNT(*) as count 
     FROM "Visit"
-    WHERE "websiteId" IN (SELECT id FROM "Website" WHERE "userId" = ${userId})
+    WHERE "websiteId" = ${websiteId}
     AND "timestamp" >= ${timeFrame.start} AND "timestamp" <= ${timeFrame.end}
     GROUP BY "browser"
     ORDER BY count DESC
@@ -83,7 +97,7 @@ async function getAnalyticsOverview(userId: string, days: number = 30): Promise<
     const devices = await db.$queryRaw`
     SELECT "device", COUNT(*) as count 
     FROM "Visit"
-    WHERE "websiteId" IN (SELECT id FROM "Website" WHERE "userId" = ${userId})
+    WHERE "websiteId" = ${websiteId}
     AND "timestamp" >= ${timeFrame.start} AND "timestamp" <= ${timeFrame.end}
     GROUP BY "device"
     ORDER BY count DESC
@@ -93,7 +107,7 @@ async function getAnalyticsOverview(userId: string, days: number = 30): Promise<
     const countries = await db.$queryRaw`
     SELECT "country", COUNT(*) as count 
     FROM "Visit"
-    WHERE "websiteId" IN (SELECT id FROM "Website" WHERE "userId" = ${userId})
+    WHERE "websiteId" = ${websiteId}
     AND "timestamp" >= ${timeFrame.start} AND "timestamp" <= ${timeFrame.end}
     GROUP BY "country"
     ORDER BY count DESC
@@ -106,7 +120,7 @@ async function getAnalyticsOverview(userId: string, days: number = 30): Promise<
       DATE("timestamp") as date,
       COUNT(*) as visits
     FROM "Visit"
-    WHERE "websiteId" IN (SELECT id FROM "Website" WHERE "userId" = ${userId})
+    WHERE "websiteId" = ${websiteId}
     AND "timestamp" >= ${timeFrame.start} AND "timestamp" <= ${timeFrame.end}
     GROUP BY DATE("timestamp")
     ORDER BY date
@@ -114,7 +128,7 @@ async function getAnalyticsOverview(userId: string, days: number = 30): Promise<
 
     return {
         totalVisits,
-        uniqueVisitors: (uniqueVisitors as any)[0].count,
+        uniqueVisitors: (uniqueVisitors as any)[0]?.count || 0,
         browsers: browsers as BrowserData[],
         devices: devices as DeviceData[],
         countries: countries as CountryData[],
@@ -122,27 +136,54 @@ async function getAnalyticsOverview(userId: string, days: number = 30): Promise<
     }
 }
 
-export default async function DashboardPage() {
+async function getWebsite(id: string) {
+    return await db.website.findUnique({
+        where: { id }
+    })
+}
+
+export default async function WebsiteDetailPage({ params }: { params: { id: string } }) {
     const session = await getServerSession(authOptions)
     const userId = session?.user?.id
 
     if (!userId) return null
 
-    const analytics = await getAnalyticsOverview(userId)
+    const website = await getWebsite(params.id)
+    
+    if (!website) {
+        notFound()
+    }
+
+    const analytics = await getWebsiteAnalytics(params.id)
 
     return (
         <div className="space-y-8">
             {/* Page Header */}
-            <div className="flex flex-col gap-1">
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900">Dashboard</h1>
-                <p className="text-gray-500">Monitor your websites' performance and visitor analytics.</p>
+            <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                        <Link href="/dashboard/websites">
+                            <Button variant="ghost" size="icon" className="rounded-full">
+                                <ArrowLeft className="h-4 w-4" />
+                            </Button>
+                        </Link>
+                        <h1 className="text-3xl font-bold tracking-tight text-gray-900">{website.domain}</h1>
+                    </div>
+                    <p className="text-gray-500 ml-10">View analytics for {website.name || website.domain}</p>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                    <Button className="bg-emerald-500 hover:bg-emerald-600">
+                        Get Tracking Code
+                    </Button>
+                </div>
             </div>
 
             <Tabs defaultValue="7days" className="w-full">
                 <div className="flex justify-between items-center mb-6">
                     <div className="flex items-center space-x-2">
-                        <Activity className="h-5 w-5 text-emerald-500" />
-                        <h2 className="text-xl font-bold text-gray-800">Analytics Overview</h2>
+                        <BarChart className="h-5 w-5 text-emerald-500" />
+                        <h2 className="text-xl font-bold text-gray-800">Website Analytics</h2>
                     </div>
                     <TabsList className="bg-gray-100/80 p-1">
                         <TabsTrigger value="7days" className="text-sm rounded-md">7 days</TabsTrigger>
@@ -159,7 +200,7 @@ export default async function DashboardPage() {
                             value={analytics.totalVisits}
                             icon={<BarChart className="h-5 w-5 text-blue-500" />}
                             description="Total page views in the last 7 days"
-                            trend={{ value: 15, isPositive: true }}
+                            trend={{ value: 12, isPositive: true }}
                             className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
                         />
                         <DashboardMetric
@@ -167,7 +208,7 @@ export default async function DashboardPage() {
                             value={analytics.uniqueVisitors}
                             icon={<Users className="h-5 w-5 text-emerald-500" />}
                             description="Based on unique IP addresses"
-                            trend={{ value: 8, isPositive: true }}
+                            trend={{ value: 5, isPositive: true }}
                             className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
                         />
                         <DashboardMetric
@@ -175,15 +216,15 @@ export default async function DashboardPage() {
                             value={analytics.devices.find((d) => d.device === 'mobile')?.count || 0}
                             icon={<Smartphone className="h-5 w-5 text-purple-500" />}
                             description="Visits from mobile devices"
-                            trend={{ value: 12, isPositive: true }}
+                            trend={{ value: 8, isPositive: true }}
                             className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
                         />
                         <DashboardMetric
                             title="Avg. Session"
-                            value="3m 42s"
+                            value="2m 48s"
                             icon={<Clock className="h-5 w-5 text-amber-500" />}
                             description="Average time spent per session"
-                            trend={{ value: 4, isPositive: false }}
+                            trend={{ value: 2, isPositive: false }}
                             className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
                         />
                     </div>
@@ -201,7 +242,7 @@ export default async function DashboardPage() {
                                         </div>
                                     </CardTitle>
                                     <div className="text-xs font-medium bg-emerald-50 text-emerald-700 rounded-full px-2 py-1">
-                                        +24% vs. previous
+                                        +16% vs. previous
                                     </div>
                                 </div>
                             </CardHeader>
@@ -259,7 +300,7 @@ export default async function DashboardPage() {
                     </div>
                 </TabsContent>
 
-                {/* Similar content for 30days and 3months tabs */}
+                {/* Similar content for other tabs */}
                 <TabsContent value="30days">
                     {/* Same structure as 7days but with 30 day data */}
                 </TabsContent>

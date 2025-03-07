@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/src/components/ui/card'
 import { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 

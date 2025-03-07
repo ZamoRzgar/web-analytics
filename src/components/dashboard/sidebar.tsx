@@ -4,6 +4,9 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LucideHome, LucideGlobe, LucideSettings, LucideLogOut, LucideBarChart2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { signOut } from 'next-auth/react'
+
+
 
 interface SidebarProps {
     className?: string
@@ -12,12 +15,19 @@ interface SidebarProps {
 export default function Sidebar({ className }: SidebarProps) {
     const pathname = usePathname()
     
+    const handleSignOut = async (e: React.MouseEvent) => {
+        e.preventDefault()
+        await signOut({ callbackUrl: '/login' })
+    }
+    
     return (
         <aside className={cn('py-8 px-6 bg-gradient-to-br from-gray-900 to-gray-800 text-white h-full flex flex-col shadow-xl', className)}>
             <div className="mb-10 px-2">
                 <div className="flex items-center gap-3">
                     <LucideBarChart2 className="h-7 w-7 text-emerald-400" />
-                    <h2 className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-blue-500 bg-clip-text text-transparent">Analytics</h2>
+                    <Link href="/dashboard" className="focus:outline-none focus:ring-2 focus:ring-emerald-400 rounded-sm">
+                        <h2 className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-blue-500 bg-clip-text text-transparent">Analytics</h2>
+                    </Link>
                 </div>
             </div>
             
@@ -32,7 +42,7 @@ export default function Sidebar({ className }: SidebarProps) {
                     href="/dashboard/websites" 
                     icon={<LucideGlobe className="h-5 w-5" />} 
                     label="Websites" 
-                    isActive={pathname?.startsWith('/dashboard/websites')}
+                    isActive={pathname === '/dashboard/websites' || pathname.startsWith('/dashboard/websites/')}
                 />
                 <NavItem 
                     href="/dashboard/settings" 
@@ -43,12 +53,16 @@ export default function Sidebar({ className }: SidebarProps) {
             </nav>
             
             <div className="mt-auto pt-6 border-t border-gray-700">
-                <NavItem 
-                    href="/api/auth/signout" 
-                    icon={<LucideLogOut className="h-5 w-5 text-gray-400" />} 
-                    label="Sign out" 
-                    variant="subtle"
-                />
+                <button
+                    onClick={handleSignOut}
+                    className="w-full flex items-center gap-4 rounded-lg px-4 py-3 transition-all duration-200 text-gray-400 hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-1 focus:ring-offset-gray-800"
+                    aria-label="Sign out"
+                >
+                    <span className="text-gray-500">
+                        <LucideLogOut className="h-5 w-5" />
+                    </span>
+                    <span className="text-sm">Sign out</span>
+                </button>
             </div>
         </aside>
     )
@@ -67,7 +81,7 @@ const NavItem = ({ href, icon, label, isActive = false, variant = 'default' }: N
         <Link
             href={href}
             className={cn(
-                "flex items-center gap-4 rounded-lg px-4 py-3 transition-all duration-200 group relative",
+                "flex items-center gap-4 rounded-lg px-4 py-3 transition-all duration-200 group relative focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-1 focus:ring-offset-gray-800",
                 variant === 'default' 
                     ? "hover:bg-gray-700/50" 
                     : "text-gray-400 hover:text-gray-300",

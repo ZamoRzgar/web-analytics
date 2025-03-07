@@ -4,10 +4,10 @@ import { useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { LucideMenu, LucideSearch, LucideBell, LucideHelpCircle, LucideChevronDown } from 'lucide-react'
-import { Button } from '../ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
+import { Button } from '@/src/components/ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from '@/src/components/ui/avatar'
 import { cn } from '@/lib/utils'
-import { Input } from '../ui/input'
+import { Input } from '@/src/components/ui/input'
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -15,7 +15,7 @@ import {
   DropdownMenuLabel, 
   DropdownMenuSeparator, 
   DropdownMenuTrigger
-} from '../ui/dropdown-menu'
+} from '@/src/components/ui/dropdown-menu'
 
 interface HeaderProps {
   className?: string

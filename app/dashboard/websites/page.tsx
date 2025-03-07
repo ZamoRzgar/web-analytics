@@ -5,6 +5,7 @@ import { Button } from '@/src/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/src/components/ui/card'
 import { Plus, Globe, ArrowUpRight, Trash2 } from 'lucide-react'
 import Link from 'next/link'
+import { WebsiteAddDialog } from '@/src/components/dashboard/website-add-dialog'
 
 async function getWebsites(userId: string) {
     return await db.website.findMany({
@@ -36,10 +37,12 @@ export default async function WebsitesPage() {
 
             {/* Add Website Button */}
             <div className="flex justify-end">
-                <Button className="bg-emerald-500 hover:bg-emerald-600">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Website
-                </Button>
+                <WebsiteAddDialog>
+                    <Button className="bg-emerald-500 hover:bg-emerald-600">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Website
+                    </Button>
+                </WebsiteAddDialog>
             </div>
 
             {/* Websites Grid */}
@@ -65,18 +68,20 @@ export default async function WebsitesPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-500">Total Visits</p>
-                                    <p className="text-2xl font-bold text-gray-900">{website._count.visits}</p>
+                            <Link href={`/dashboard/websites/${website.id}`} className="block">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-500">Total Visits</p>
+                                        <p className="text-2xl font-bold text-gray-900">{website._count.visits}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-500">Added On</p>
+                                        <p className="text-sm text-gray-700">
+                                            {new Date(website.createdAt).toLocaleDateString()}
+                                        </p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="text-sm font-medium text-gray-500">Added On</p>
-                                    <p className="text-sm text-gray-700">
-                                        {new Date(website.createdAt).toLocaleDateString()}
-                                    </p>
-                                </div>
-                            </div>
+                            </Link>
                         </CardContent>
                     </Card>
                 ))}
@@ -90,10 +95,12 @@ export default async function WebsitesPage() {
                             <p className="text-gray-500 text-center mb-4">
                                 Add your first website to start tracking analytics
                             </p>
-                            <Button className="bg-emerald-500 hover:bg-emerald-600">
-                                <Plus className="h-4 w-4 mr-2" />
-                                Add Website
-                            </Button>
+                            <WebsiteAddDialog>
+                                <Button className="bg-emerald-500 hover:bg-emerald-600">
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Add Website
+                                </Button>
+                            </WebsiteAddDialog>
                         </CardContent>
                     </Card>
                 )}

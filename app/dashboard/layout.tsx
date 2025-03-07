@@ -1,9 +1,9 @@
 // app/dashboard/layout.tsx
 import { ReactNode } from 'react'
-import Sidebar from '../../src/components/dashboard/sidebar'
-import Header from '../../src/components/dashboard/header'
-import { Toaster } from '../../src/components/ui/toaster'
-import { auth } from '../../lib/auth'
+import Sidebar from '@/src/components/dashboard/sidebar'
+import Header from '@/src/components/dashboard/header'
+import { Toaster } from '@/src/components/ui/toaster'
+import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 
 interface DashboardLayoutProps {
@@ -30,3 +30,4 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
         </div>
     )
 }
+
