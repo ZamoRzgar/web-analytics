@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { Providers } from './providers'
 
 // Use system font instead of Google Fonts to avoid connectivity issues
 export const metadata: Metadata = {
@@ -14,7 +15,9 @@ interface RootLayoutProps {
 const RootLayout = ({ children }: RootLayoutProps): React.ReactElement => {
     return (
         <html lang="en">
-            <body className="font-sans">{children}</body>
+            <body className="font-sans">
+                <Providers>{children}</Providers>
+            </body>
         </html>
     )
 }

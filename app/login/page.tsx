@@ -102,7 +102,7 @@ export default function LoginPage() {
             <div className="text-sm">
               <button
                 type="button"
-                onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+                onClick={() => signIn('google', { callbackUrl: 'http://localhost:3000/dashboard' })}
                 className="font-medium text-blue-600 hover:text-blue-500"
               >
                 Or sign in with Google
